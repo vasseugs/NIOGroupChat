@@ -33,7 +33,11 @@ public class ChatWindow {
                 Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
                 for (SelectionKey key : selectedKeys) {
-                    // chat window channel always only readable
+                    if(key.isWritable()) {
+                        connectToServer(key);
+                    }
+
+                    // except attaching to server, chat window channel is always readable
                     if (key.isReadable()) {
                         printToWindow(key);
                     }
@@ -48,10 +52,19 @@ public class ChatWindow {
         }
     }
 
+    private void connectToServer(SelectionKey key) throws IOException {
+        SocketChannel toServer = (SocketChannel) key.channel();
+        byte[] connectingMessage = "CHATWINDOW".getBytes();
+        buffer = buffer.put(connectingMessage);
+        buffer.limit(connectingMessage.length);
+        toServer.write(buffer);
+        buffer.clear();
+        key.interestOps(SelectionKey.OP_READ);
+    }
+
     // a method to print all chat messages to chat window
     private void printToWindow(SelectionKey key) throws IOException {
         fromServer = (SocketChannel) key.channel();
-        buffer = (ByteBuffer) key.attachment();
 
         fromServer.read(buffer);
         buffer.flip();
