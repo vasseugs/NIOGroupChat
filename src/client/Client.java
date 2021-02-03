@@ -1,5 +1,7 @@
 package client;
 
+import programConstants.ProgramConstants;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -15,8 +17,8 @@ public class Client {
     SocketChannel toServer;
     ByteBuffer messageBuffer;
 
-    public Client(String host, int port) {
-        this.serverAddress = new InetSocketAddress(host, port);
+    public Client(String serverHost, int serverPort) {
+        this.serverAddress = new InetSocketAddress(serverHost, serverPort);
     }
 
     public void start() {
@@ -26,7 +28,7 @@ public class Client {
             toServer.configureBlocking(false);
 
             if(toServer.isConnected()) {
-                System.out.println("Connected to server.");
+                System.out.println(ProgramConstants.CONNECTED_SUCCESSFULLY);
             }
 
             Selector selector = Selector.open();
@@ -34,7 +36,7 @@ public class Client {
             /* register the channel for reading first
             to read a greeting from server
              */
-            toServer.register(selector, SelectionKey.OP_READ, messageBuffer);
+            toServer.register(selector, SelectionKey.OP_WRITE, messageBuffer);
 
             // infinite loop for the selector
             while(true) {
@@ -57,7 +59,7 @@ public class Client {
                 selectedKeys.clear();
             }
         } catch (IOException e) {
-            System.out.println("Сервер недоступен. Попробуйте подключиться позже.");
+            System.out.println(ProgramConstants.SERVER_UNAVAILABLE);
         }
     }
 
@@ -92,7 +94,7 @@ public class Client {
 
         /* if the message does not contain quit command
         then we send it to server */
-        if(!stringMessage.equals("quit")) {
+        if(!stringMessage.equals(ProgramConstants.DISCONNECT_USER)) {
             messageBuffer = messageBuffer.put(0, byteMessage);
             messageBuffer.limit(byteMessage.length);
             toServer.write(messageBuffer);
@@ -107,7 +109,7 @@ public class Client {
     // a method to disconnect from server and exit the program
     private void disconnect(SocketChannel toServer) throws IOException {
         toServer.close();
-        System.out.println("Disconnected from server.");
+        System.out.println(ProgramConstants.USER_DISCONNECTED);
         System.exit(0);
     }
 }

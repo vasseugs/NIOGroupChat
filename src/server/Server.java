@@ -1,13 +1,12 @@
 package server;
 
+import programConstants.ProgramConstants;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,14 +14,12 @@ public class Server {
 
     Selector selector;
     InetSocketAddress serverAddress;
-    InetSocketAddress chatWindowAddress;
     ServerSocketChannel serverSocketChannel;
 
     HashSet<SocketChannel> attachedChatWindows;
 
     public Server(String host, int port) {
         this.serverAddress = new InetSocketAddress(host, port);
-        chatWindowAddress = new InetSocketAddress("localhost", 46000);
         attachedChatWindows = new HashSet<>();
     }
 
@@ -67,9 +64,6 @@ public class Server {
         SocketChannel newClient = serverSocketChannel.accept();
         newClient.configureBlocking(false);
         newClient.register(selector, SelectionKey.OP_READ, ByteBuffer.allocate(512));
-
-
-        printToChat("New user " + newClient.socket().getRemoteSocketAddress() + " connected to chat!");
     }
 
     // a method to receive a message from a client and print in chat for all
@@ -88,16 +82,15 @@ public class Server {
         otherwise its channel comes from a client and hence
         we print his message to a chat
          */
-        if(clientMessage.equals("CHATWINDOW")) {
-            attachedChatWindows.add(fromClient);
-        } else {
+        if(!clientMessage.equals(ProgramConstants.CHAT_WINDOW_MARKER)) {
             if (bytesInMessage != -1) {
                 printToChat(fromClient.socket().getRemoteSocketAddress() + ": " + clientMessage);
             } else {
                 deleteUser(key);
             }
+        } else {
+            attachedChatWindows.add(fromClient);
         }
-
     }
 
     // a method to delete user from chat
@@ -116,7 +109,5 @@ public class Server {
             chatWindow.write(buffer);
             buffer.clear();
         }
-
     }
-
 }

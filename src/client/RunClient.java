@@ -1,8 +1,9 @@
 package client;
+import programConstants.ProgramConstants;
 
 public class RunClient {
     public static void main(String[] args) {
-        new Client("localhost", 31000).start();
+        new Client(ProgramConstants.SERVER_HOST, ProgramConstants.SERVER_PORT).start();
     }
 
 }

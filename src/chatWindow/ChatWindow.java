@@ -1,43 +1,43 @@
 package chatWindow;
 
+import programConstants.ProgramConstants;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 
 public class ChatWindow {
 
     InetSocketAddress serverAddress;
-    SocketChannel fromServer;
+    SocketChannel serverChannel;
     ByteBuffer buffer = ByteBuffer.allocate(1024);
     String message;
 
-    public ChatWindow(String host, int port) {
-        serverAddress = new InetSocketAddress(host, port);
+    public ChatWindow(String serverHost, int serverPort) {
+        serverAddress = new InetSocketAddress(serverHost, serverPort);
     }
 
     public void start() {
         try {
             Selector selector = Selector.open();
-            fromServer = SocketChannel.open(serverAddress);
-            fromServer.configureBlocking(false);
-            fromServer.register(selector, SelectionKey.OP_WRITE);
+            serverChannel = SocketChannel.open(serverAddress);
+            serverChannel.configureBlocking(false);
+            serverChannel.register(selector, SelectionKey.OP_READ);
+
+            attachToServer();
 
             while (true) {
                 selector.select();
                 Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
                 for (SelectionKey key : selectedKeys) {
-                    if(key.isWritable()) {
-                        connectToServer(key);
-                    }
 
-                    // except attaching to server, chat window channel is always readable
+                    // chat window channel is always readable
                     if (key.isReadable()) {
                         printToWindow(key);
                     }
@@ -45,28 +45,27 @@ public class ChatWindow {
                 selectedKeys.clear();
             }
         } catch (SocketException e) {
-            System.out.println("Chat was closed by administrator.");
+            System.out.println(ProgramConstants.SERVER_DISCONNECTED);
             System.exit(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void connectToServer(SelectionKey key) throws IOException {
-        SocketChannel toServer = (SocketChannel) key.channel();
-        byte[] connectingMessage = "CHATWINDOW".getBytes();
-        buffer = buffer.put(connectingMessage);
+    private void attachToServer() throws IOException {
+        byte[] connectingMessage =
+                ProgramConstants.CHAT_WINDOW_MARKER.getBytes();
+        buffer = buffer.put(0, connectingMessage);
         buffer.limit(connectingMessage.length);
-        toServer.write(buffer);
+        serverChannel.write(buffer);
         buffer.clear();
-        key.interestOps(SelectionKey.OP_READ);
     }
 
     // a method to print all chat messages to chat window
     private void printToWindow(SelectionKey key) throws IOException {
-        fromServer = (SocketChannel) key.channel();
+        serverChannel = (SocketChannel) key.channel();
 
-        fromServer.read(buffer);
+        serverChannel.read(buffer);
         buffer.flip();
 
         message = new String(buffer.array(), buffer.position(), buffer.limit());
