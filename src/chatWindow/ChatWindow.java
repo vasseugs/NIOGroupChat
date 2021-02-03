@@ -12,33 +12,28 @@ import java.util.Set;
 
 public class ChatWindow {
 
-    InetSocketAddress windowAddress;
-    ServerSocketChannel windowChannel;
+    InetSocketAddress serverAddress;
     SocketChannel fromServer;
     ByteBuffer buffer = ByteBuffer.allocate(1024);
     String message;
 
     public ChatWindow(String host, int port) {
-        windowAddress = new InetSocketAddress(host, port);
+        serverAddress = new InetSocketAddress(host, port);
     }
 
     public void start() {
         try {
             Selector selector = Selector.open();
-            windowChannel = ServerSocketChannel.open();
-            windowChannel.bind(windowAddress);
-            windowChannel.configureBlocking(false);
-            windowChannel.register(selector, SelectionKey.OP_ACCEPT);
+            fromServer = SocketChannel.open(serverAddress);
+            fromServer.configureBlocking(false);
+            fromServer.register(selector, SelectionKey.OP_WRITE);
 
             while (true) {
                 selector.select();
                 Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
                 for (SelectionKey key : selectedKeys) {
-                    if (key.isAcceptable()) {
-                        bindToServer(selector, key);
-                    }
-
+                    // chat window channel always only readable
                     if (key.isReadable()) {
                         printToWindow(key);
                     }
@@ -51,14 +46,6 @@ public class ChatWindow {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    // a method to bind chat window to server
-    private void bindToServer(Selector selector, SelectionKey key) throws IOException {
-        windowChannel = (ServerSocketChannel) key.channel();
-        fromServer = windowChannel.accept();
-        fromServer.configureBlocking(false);
-        fromServer.register(selector, SelectionKey.OP_READ, buffer);
     }
 
     // a method to print all chat messages to chat window
