@@ -8,6 +8,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.HashSet;
 import java.util.Set;
 
 public class Server {
@@ -16,11 +17,13 @@ public class Server {
     InetSocketAddress serverAddress;
     InetSocketAddress chatWindowAddress;
     ServerSocketChannel serverSocketChannel;
-    SocketChannel chatWindow;
+
+    HashSet<SocketChannel> attachedChatWindows;
 
     public Server(String host, int port) {
         this.serverAddress = new InetSocketAddress(host, port);
         chatWindowAddress = new InetSocketAddress("localhost", 46000);
+        attachedChatWindows = new HashSet<>();
     }
 
     // a method to start server and transfer incoming messages to chatWindow
@@ -58,15 +61,13 @@ public class Server {
         }
     }
 
-    // new client accepting procedure
+    // general method to accept clients and attac
     private void accept(SelectionKey key) throws IOException {
         serverSocketChannel = (ServerSocketChannel) key.channel();
         SocketChannel newClient = serverSocketChannel.accept();
         newClient.configureBlocking(false);
         newClient.register(selector, SelectionKey.OP_READ, ByteBuffer.allocate(512));
 
-        ByteBuffer buffer = ByteBuffer.wrap("You have connected the chat!".getBytes());
-        newClient.write(buffer);
 
         printToChat("New user " + newClient.socket().getRemoteSocketAddress() + " connected to chat!");
     }
@@ -81,11 +82,20 @@ public class Server {
 
         String clientMessage = new String(buffer.array(), buffer.position(), buffer.limit());
         buffer.clear();
-        // if the client doesn't want to disconnect, print his message in chat
-        if(bytesInMessage != -1) {
-            printToChat(fromClient.socket().getRemoteSocketAddress() + ": " + clientMessage);
+
+        /* if a message contains chat window marker,
+        we add its channel to chat windows collection,
+        otherwise its channel comes from a client and hence
+        we print his message to a chat
+         */
+        if(clientMessage.equals("CHATWINDOW")) {
+            attachedChatWindows.add(fromClient);
         } else {
-            deleteUser(key);
+            if (bytesInMessage != -1) {
+                printToChat(fromClient.socket().getRemoteSocketAddress() + ": " + clientMessage);
+            } else {
+                deleteUser(key);
+            }
         }
 
     }
@@ -101,9 +111,12 @@ public class Server {
     // a method to print any kind of messages in chat
     private void printToChat(String message) throws IOException {
         ByteBuffer buffer = ByteBuffer.wrap(message.getBytes());
-        chatWindow = SocketChannel.open(chatWindowAddress);
-        chatWindow.write(buffer);
-        buffer.flip();
+
+        for(SocketChannel chatWindow : attachedChatWindows) {
+            chatWindow.write(buffer);
+            buffer.clear();
+        }
+
     }
 
 }
