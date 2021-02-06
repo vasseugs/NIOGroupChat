@@ -4,6 +4,7 @@ import programConstants.ProgramConstants;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -15,12 +16,14 @@ public class Client {
 
     InetSocketAddress serverAddress;
     SocketChannel toServer;
-    ByteBuffer messageBuffer;
+    ByteBuffer messageBuffer;  // the only buffer because we have only one channel to a server
+    String nickname;
 
-    public Client(String serverHost, int serverPort) {
+    public Client(String serverHost, int serverPort) throws UnknownHostException {
         this.serverAddress = new InetSocketAddress(serverHost, serverPort);
     }
 
+    // a general method to run the client program and manage all events
     public void start() {
         try {
             //connecting to server
@@ -31,12 +34,13 @@ public class Client {
                 System.out.println(ProgramConstants.CONNECTED_SUCCESSFULLY);
             }
 
+            // registering channel in selector
             Selector selector = Selector.open();
             messageBuffer = ByteBuffer.allocate(512);
-            /* register the channel for reading first
-            to read a greeting from server
-             */
             toServer.register(selector, SelectionKey.OP_WRITE, messageBuffer);
+
+            // nickname registration
+            nicknameRegistration();
 
             // infinite loop for the selector
             while(true) {
@@ -45,13 +49,8 @@ public class Client {
 
                 // iterating over selected-keys set
                 for(SelectionKey key : selectedKeys) {
-
                     if(key.isWritable()) {
                         sendToServer(key);
-                    }
-
-                    if(key.isReadable()) {
-                        readFromServer(key);
                     }
                 }
                 // it is important to clear the Set or program will reuse
@@ -63,7 +62,17 @@ public class Client {
         }
     }
 
-    // a method to read incoming chat greeting
+    // this method sends special message to server that contains client's nickname to register in chat
+    private void nicknameRegistration() throws IOException {
+        System.out.print("Enter you nickname: ");
+        Scanner scanner = new Scanner(System.in);
+        nickname = scanner.nextLine();
+        String registrationMessage = ProgramConstants.NICKNAME_REGISTRATION + nickname;
+        byte[] registrationBytes = registrationMessage.getBytes();
+        toServer.write(ByteBuffer.wrap(registrationBytes));
+    }
+
+    // a method to read incoming chat greeting - optional, doesn't execute in this version program
     private void readFromServer(SelectionKey key) throws IOException {
         toServer = (SocketChannel) key.channel();
         messageBuffer = (ByteBuffer) key.attachment();
@@ -88,7 +97,6 @@ public class Client {
         // creating a message
         System.out.print("Me: ");
         Scanner console = new Scanner(System.in);
-
         String stringMessage = console.nextLine();
         byte[] byteMessage = stringMessage.getBytes();
 

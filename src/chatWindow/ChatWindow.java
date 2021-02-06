@@ -5,6 +5,7 @@ import programConstants.ProgramConstants;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -15,13 +16,14 @@ public class ChatWindow {
 
     InetSocketAddress serverAddress;
     SocketChannel serverChannel;
-    ByteBuffer buffer = ByteBuffer.allocate(1024);
-    String message;
+    ByteBuffer buffer = ByteBuffer.allocate(512);  // the only buffer because we have only one channel
+    String message;  // the only message field because we have only one channel
 
-    public ChatWindow(String serverHost, int serverPort) {
+    public ChatWindow(String serverHost, int serverPort) throws UnknownHostException {
         serverAddress = new InetSocketAddress(serverHost, serverPort);
     }
 
+    // a method that starts chat window and manages all events
     public void start() {
         try {
             Selector selector = Selector.open();
@@ -52,6 +54,7 @@ public class ChatWindow {
         }
     }
 
+    // this method attaches chat window to server by sending special marker ia a message
     private void attachToServer() throws IOException {
         byte[] connectingMessage =
                 ProgramConstants.CHAT_WINDOW_MARKER.getBytes();
@@ -59,6 +62,7 @@ public class ChatWindow {
         buffer.limit(connectingMessage.length);
         serverChannel.write(buffer);
         buffer.clear();
+        System.out.println(ProgramConstants.CONNECTED_TO_SERVER);
     }
 
     // a method to print all chat messages to chat window

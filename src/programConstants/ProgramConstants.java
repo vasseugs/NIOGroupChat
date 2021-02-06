@@ -3,10 +3,11 @@ package programConstants;
 public class ProgramConstants {
 
     public static final String SERVER_HOST = "localhost";
-    public static final int SERVER_PORT = 32000;
+    public static final int SERVER_PORT = 39000;
 
     // chat window service messages
     public static final String CHAT_WINDOW_MARKER = "THIS_IS_CHAT_WINDOW";
+    public static final String CONNECTED_TO_SERVER = "Chat window connected to server.";
     public static final String SERVER_DISCONNECTED = "Chat was closed by administrator.";
 
 
@@ -15,4 +16,5 @@ public class ProgramConstants {
     public static final String USER_DISCONNECTED = "Disconnected from server.";
     public static final String SERVER_UNAVAILABLE = "Server is not available. Try to connect later";
     public static final String CONNECTED_SUCCESSFULLY = "Connected to server.";
+    public static final String NICKNAME_REGISTRATION = "@NICKNAME@ ";
 }
