@@ -1,6 +1,6 @@
 # NIOGroupChat
 
-This program represents a basic NIO client-server model. It consist of 3 parts -
+This program represents basic NIO client-server model. It consists of 3 parts -
 the server, the client and the chat window. I added a separate chat window because I find this the 
 most convinient way to display chat messages. In fact, the chat window is like a client, but the only thing
 it does is reading and displaying incoming messages from users in this chat.
