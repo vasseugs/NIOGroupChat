@@ -5,7 +5,8 @@ the server, the client and the chat window. I added a separate chat window becau
 most convinient way to display chat messages. In fact, the chat window is like a client, but the only thing
 it does is reading and displaying incoming messages from users in this chat.
 
-It's not supposed to use this program to commuticate, it's just me practicing in NIO. 
+It's not supposed to use this program to commuticate, it's just me practicing in NIO. I'm not familiar with
+GUI frameworks yet, so the code runs only in console.
 
 # How to use
 
@@ -22,3 +23,4 @@ I tested it over wifi on Windows 10. Firstly, I entered "ipconfig" in command li
 computer which server will be going to run on and pasted it into the ProgramConstants.SERVER_HOST. Then I specified the same 
 IP address ProgramConstants.SERVER_HOST on another computer. The, the port value must be the same on all computers running
 this program. 
+
